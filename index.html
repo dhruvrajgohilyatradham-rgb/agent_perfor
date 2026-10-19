@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Agent Ledger — Night Sales Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f3ead3;--paper2:#e9dcb9;--ink:#1b1814;--red:#8c1c1c;--green:#1f4d2b;--mute:#4a4234;--rule:1px solid var(--ink);--head:"Playfair Display",Georgia,serif;--sans:"Inter",system-ui,"Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.55 var(--sans)}
+.page{max-width:1240px;margin:0 auto;padding:14px 18px 40px;border-left:var(--rule);border-right:var(--rule);background:rgba(255,250,235,.4)}
+.mast{text-align:center;border-bottom:4px double var(--ink);padding-bottom:8px}
+h1{font:900 clamp(34px,7vw,70px)/1 var(--head);margin:6px 0 0}
+.sub{font-style:italic;margin:4px 0}
+.tiny{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+button,select,input{font:inherit;font-size:16px;color:var(--ink);background:#fffaf0;border:var(--rule);padding:6px 9px;border-radius:0}
+button{cursor:pointer;background:var(--ink);color:var(--paper);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+button:hover{background:var(--red)}button.alt{background:#fffaf0;color:var(--ink)}
+nav{display:flex;flex-wrap:wrap;border-bottom:var(--rule);margin:12px 0 16px}
+nav button{flex:1;background:none;color:var(--ink);border:0;border-right:var(--rule);font:700 16px var(--head);padding:11px;text-transform:none}
+nav button.on{background:var(--ink);color:var(--paper)}
+section{display:none}section.on{display:block}
+h2{font:900 26px var(--head);border-top:3px double var(--ink);border-bottom:var(--rule);padding:6px 0;margin:0 0 12px;text-transform:uppercase}
+h3{font:700 20px var(--head);margin:20px 0 6px;border-bottom:var(--rule)}
+.ctl{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end;margin:8px 0 12px}
+.ctl label{display:flex;flex-direction:column;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);gap:3px}
+.box{border:var(--rule);padding:8px 10px;margin:8px 0;background:rgba(255,250,235,.6)}
+.box b{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.chks{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px}
+.chks label{flex-direction:row;align-items:center;gap:6px;font-size:16px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer}
+.chks input{width:18px;height:18px;accent-color:var(--red)}
+.mini{font-size:12px;padding:2px 8px;margin-left:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));border-top:var(--rule);border-left:var(--rule);margin-bottom:12px}
+.stat{border-right:var(--rule);border-bottom:var(--rule);padding:8px 12px}
+.stat .l{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.stat .v{font:700 28px var(--sans);font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:16px;border-top:3px double var(--ink);border-bottom:3px double var(--ink);font-variant-numeric:tabular-nums}
+th{font:700 12.5px var(--sans);text-transform:uppercase;letter-spacing:.05em;text-align:right;border-bottom:var(--rule);padding:8px;white-space:nowrap;background:var(--paper2)}
+th:first-child,td:first-child{text-align:left}
+td{padding:8px;border-bottom:1px dotted var(--mute);text-align:right;font-weight:500;white-space:nowrap}
+tfoot td,tr.tot td{font-weight:700;border-top:var(--rule);background:rgba(27,24,20,.06)}
+.up{color:var(--green);font-weight:700}.dn{color:var(--red);font-weight:700}
+.note{font-size:14px;color:var(--mute);font-style:italic}
+.msg{border:3px double var(--red);padding:14px;margin:14px 0;text-align:center}
+@media print{nav,.ctl,.box{display:none}section{display:none}section.on{display:block}}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="mast">
+  <div class="tiny">Night Sales Edition • Agent Performance Records</div>
+  <h1>THE AGENT LEDGER</h1>
+  <p class="sub">Multi-Agent Performance, Compared &amp; Counted</p>
+  <div class="tiny"><span id="info">Loading…</span> &nbsp; <button id="refresh" class="alt mini">↻ Refresh</button></div>
+</header>
+<div id="msg" class="msg" hidden></div>
+<main id="app" hidden>
+<nav>
+  <button data-t="t1" class="on">1 · Agent Monthly</button>
+  <button data-t="t2">2 · Range vs Single Day</button>
+  <button data-t="t3">3 · Month vs Month</button>
+</nav>
+
+<section id="t1" class="on"><h2>Agent Monthly Performance</h2>
+  <div class="ctl"><label>Month<select id="m1"></select></label><label>Agent<select id="a1"></select></label></div>
+  <div class="stats" id="s1"></div>
+  <div class="scroll" id="o1"></div>
+  <p class="note">Averages are per recorded day (days that have an entry). Missing/invalid cells are ignored, never counted as zero.</p>
+</section>
+
+<section id="t2"><h2>Date Range vs Single Day</h2>
+  <div class="ctl"><label>Month<select id="m2"></select></label>
+  <label>Range start<input type="date" id="rs"></label><label>Range end<input type="date" id="re"></label>
+  <label>Single day<input type="date" id="sd"></label></div>
+  <div class="box"><b>Agents</b><span id="ag2tools"></span><div class="chks" id="ag2"></div></div>
+  <div class="box"><b>Columns to compare</b><div class="chks" id="c2"></div></div>
+  <p id="i2"></p><div id="o2"></div>
+</section>
+
+<section id="t3"><h2>Month vs Month Comparison</h2>
+  <div class="ctl"><label>Month A (base)<select id="ma"></select></label><label>Month B (compare)<select id="mb"></select></label></div>
+  <div class="box"><b>Agents</b><span id="ag3tools"></span><div class="chks" id="ag3"></div></div>
+  <div class="box"><b>Columns to compare</b><div class="chks" id="c3"></div></div>
+  <div id="o3"></div>
+</section>
+</main>
+</div>
+<script>
+const URL_='https://opensheet.elk.sh/1r4lcKV-nEqFJAalyr2qOVsKb9l628VGnooLoc0GSN0c/Night%20sales';
+const COLS=[
+ {n:'Booking',k:'booking',t:'n'},{n:'Amount',k:'amount',t:'m'},{n:'Amount / Booking',k:'apb',t:'m',d:1},
+ {n:'Total Calls',k:'total calls',t:'n'},{n:'Incoming Ans',k:'incoming ans',t:'n'},{n:'Click To Call',k:'click to call',t:'n'},
+ {n:'Click Ans',k:'click ans',t:'n'},{n:'Leads',k:'leads',t:'n'},{n:'Pending',k:'pending',t:'n'},{n:'Chat',k:'chat',t:'n'},
+ {n:'Ticket',k:'ticket',t:'n'},{n:'ABD',k:'abd',t:'n'},{n:'Working Hours',k:'working hours',t:'t'},{n:'Call Hours',k:'call hours',t:'t'},{n:'Target',k:'target',t:'m'}];
+const DEF=['booking','amount','total calls'];
+let ROWS=[],AG=[],MS=[];
+const $=id=>document.getElementById(id);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const fD=s=>{const[y,m,d]=s.split('-').map(Number);return d+' '+MON[m-1]+' '+y};
+const fM=k=>{const[y,m]=k.split('-').map(Number);return MON[m-1]+' '+y};
+const dow=s=>DOW[new Date(s+'T00:00:00Z').getUTCDay()];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function pn(v){if(v==null)return null;let s=String(v).replace(/[₹\s,]/g,'');if(s==='')return null;s=s.replace(/\.(?=.*\.)/g,'');const n=Number(s);return isFinite(n)?n:null}
+function pt(v){const m=/^(\d+):(\d+)(?::(\d+))?$/.exec(String(v||'').trim());return m?+m[1]+m[2]/60+(m[3]||0)/3600:null}
+/* Mixed date formats: some rows are DD/MM/YYYY, others MM/DD/YYYY (separator - / or .).
+   Unambiguous rows (a number > 12) are decided directly. For ambiguous ones (both <= 12),
+   future dates are rejected and the candidate closest to the neighbouring rows is chosen. */
+function dateCands(v){const m=/^\s*(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/.exec(String(v));if(!m)return[];
+ const a=+m[1],b=+m[2],y=+m[3],out=[];
+ const ok=(d,mo)=>{const t=new Date(Date.UTC(y,mo-1,d));return t.getUTCMonth()===mo-1&&t.getUTCDate()===d};
+ const iso=(d,mo)=>y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+ if(ok(a,b))out.push(iso(a,b));          /* DD/MM */
+ if(a!==b&&ok(b,a))out.push(iso(b,a));   /* MM/DD */
+ return out}
+function resolveDates(rows){
+ const dd=s=>Date.parse(s+'T00:00:00Z'),lim=new Date();lim.setDate(lim.getDate()+2);
+ const maxIso=lim.getFullYear()+'-'+String(lim.getMonth()+1).padStart(2,'0')+'-'+String(lim.getDate()).padStart(2,'0');
+ rows.forEach(r=>{if(r.cd.length===1)r.date=r.cd[0]});
+ let anchor=(rows.find(r=>r.date)||{}).date||null;
+ rows.forEach(r=>{
+  if(r.date){anchor=r.date;return}
+  let c=r.cd.filter(x=>x<=maxIso);if(!c.length)c=r.cd;
+  if(c.length>1&&anchor)c=[c.reduce((p,q)=>Math.abs(dd(q)-dd(anchor))<Math.abs(dd(p)-dd(anchor))?q:p)];
+  r.date=c[0];anchor=r.date});
+ rows.forEach(r=>delete r.cd)}
+/* aggregation */
+const S=(rs,k)=>rs.reduce((t,r)=>t+(r[k]||0),0);
+const nd=rs=>new Set(rs.map(r=>r.date)).size;
+const tot=(rs,c)=>c.d?(S(rs,'booking')?S(rs,'amount')/S(rs,'booking'):NaN):S(rs,c.k);
+const avg=(rs,c)=>c.d?tot(rs,c):(nd(rs)?tot(rs,c)/nd(rs):NaN);
+function fmt(c,v,isAvg){if(!isFinite(v))return'—';
+ if(c.t==='t'){let h=Math.floor(v),m=Math.round((v-h)*60);if(m===60){h++;m=0}return h+':'+String(m).padStart(2,'0')+' h'}
+ if(c.t==='m')return'₹'+Math.round(v).toLocaleString('en-IN');
+ return isAvg?v.toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1}):Math.round(v).toLocaleString('en-IN')}
+function pct(a,b){return a===0?null:(isFinite(a)&&isFinite(b)?(b-a)/a*100:undefined)}
+const pc=p=>p===null?'<span class="note">n/a</span>':p===undefined?'—':`<span class="${p>=0?'up':'dn'}">${p>=0?'▲ +':'▼ −'}${Math.abs(p).toFixed(1)}%</span>`;
+function dl(c,d,isAvg){if(!isFinite(d))return'—';return`<span class="${d>=0?'up':'dn'}">${d>=0?'+':'−'}${fmt(c,Math.abs(d),isAvg)}</span>`}
+/* controls */
+function checks(id,items,sel){$(id).innerHTML=items.map(i=>`<label><input type="checkbox" value="${esc(i.v)}" ${sel.includes(i.v)?'checked':''}>${esc(i.l)}</label>`).join('')}
+const picked=id=>[...$(id).querySelectorAll('input:checked')].map(x=>x.value);
+const colsOf=id=>COLS.filter(c=>picked(id).includes(c.k));
+function tools(id,box,fn){$(id).innerHTML=`<button class="alt mini" data-all="1">All</button><button class="alt mini" data-all="0">None</button>`;
+ $(id).onclick=e=>{const b=e.target.dataset.all;if(b==null)return;$(box).querySelectorAll('input').forEach(i=>i.checked=b==='1');fn()}}
+const inMonth=m=>ROWS.filter(r=>r.date.startsWith(m));
+
+/* TAB 1 */
+function r1(){
+ const m=$('m1').value,a=$('a1').value,all=a==='*',rs=inMonth(m).filter(r=>all||r.agent===a);
+ const cs=[COLS[0],COLS[1],COLS[3]];
+ $('s1').innerHTML=[['Bookings',fmt(COLS[0],tot(rs,COLS[0]))],['Amount',fmt(COLS[1],tot(rs,COLS[1]))],['Total Calls',fmt(COLS[3],tot(rs,COLS[3]))],['Recorded days',nd(rs)],['Avg bookings / day',fmt(COLS[0],avg(rs,COLS[0]),1)],['Avg amount / day',fmt(COLS[1],avg(rs,COLS[1]))]].map(x=>`<div class="stat"><div class="l">${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
+ if(!rs.length){$('o1').innerHTML='<div class="msg">No records for this selection.</div>';return}
+ const head=COLS.map(c=>`<th>${c.n}</th>`).join('');
+ let rows,first;
+ if(all){first='Agent';const ags=[...new Set(rs.map(r=>r.agent))].sort();
+  rows=ags.map(g=>{const x=rs.filter(r=>r.agent===g);return`<tr><td><b>${esc(g)}</b> <span class="note">${nd(x)}d</span></td>${COLS.map(c=>`<td>${fmt(c,tot(x,c))}</td>`).join('')}</tr>`}).join('')}
+ else{first='Date';rows=rs.slice().sort((x,y)=>x.date<y.date?-1:1).map(r=>`<tr><td>${fD(r.date)} <span class="note">${dow(r.date)}</span></td>${COLS.map(c=>`<td>${fmt(c,tot([r],c))}</td>`).join('')}</tr>`).join('')}
+ $('o1').innerHTML=`<table><thead><tr><th>${first}</th>${head}</tr></thead><tbody>${rows}</tbody><tfoot>
+ <tr><td>Total</td>${COLS.map(c=>`<td>${fmt(c,tot(rs,c))}</td>`).join('')}</tr>
+ <tr><td>Avg / day</td>${COLS.map(c=>`<td>${fmt(c,avg(rs,c),1)}</td>`).join('')}</tr></tfoot></table>`}
+
+/* TAB 2 */
+function init2(){const m=$('m2').value,ds=[...new Set(inMonth(m).map(r=>r.date))].sort();
+ ['rs','re','sd'].forEach(i=>{$(i).min=ds[0];$(i).max=ds[ds.length-1]});
+ const k=Math.min(ds.length-1,Math.max(0,ds.length-2));
+ $('rs').value=ds[0];$('re').value=ds[Math.max(0,k-1)];$('sd').value=ds[k];r2()}
+function r2(){
+ const s=$('rs').value,e=$('re').value,d=$('sd').value,ags=picked('ag2'),cs=colsOf('c2'),o=$('o2');
+ if(!s||!e||!d){o.innerHTML='<div class="msg">Choose a range and a single day.</div>';return}
+ if(s>e){o.innerHTML='<div class="msg">Range start must be on or before range end.</div>';return}
+ if(!ags.length||!cs.length){o.innerHTML='<div class="msg">Tick at least one agent and one column.</div>';return}
+ const sel=ROWS.filter(r=>ags.includes(r.agent)),rg=sel.filter(r=>r.date>=s&&r.date<=e),dy=sel.filter(r=>r.date===d);
+ const cal=Math.round((new Date(e)-new Date(s))/864e5)+1;
+ $('i2').innerHTML=`<b>Range:</b> ${fD(s)} – ${fD(e)} · ${cal} days selected, ${nd(rg)} with records &nbsp; <b>Single day:</b> ${fD(d)} (${dow(d)})${d>=s&&d<=e?' <span class="dn">— inside the range</span>':''}`;
+ o.innerHTML=cs.map(c=>{
+  const row=(lab,R,D,b)=>{const t=tot(R,c),a=avg(R,c),v=D.length?tot(D,c):NaN;
+   return`<tr${b?' class="tot"':''}><td>${lab}</td><td>${fmt(c,t)}</td><td>${fmt(c,a,1)}</td><td>${fmt(c,v)}</td><td>${dl(c,v-a,1)}</td><td>${pc(pct(a,v))}</td></tr>`};
+  const rows=ags.filter(g=>rg.some(r=>r.agent===g)||dy.some(r=>r.agent===g)).sort().map(g=>row(esc(g),rg.filter(r=>r.agent===g),dy.filter(r=>r.agent===g))).join('');
+  return`<h3>${c.n}</h3><div class="scroll"><table><thead><tr><th>Agent</th><th>Range total</th><th>Avg / day (range)</th><th>Single day</th><th>Day − Avg</th><th>Day vs Avg %</th></tr></thead><tbody>${rows}${row('All selected',rg,dy,1)}</tbody></table></div>`}).join('')}
+
+/* TAB 3 */
+function r3(){
+ const A=$('ma').value,B=$('mb').value,ags=picked('ag3'),cs=colsOf('c3'),o=$('o3');
+ if(A===B){o.innerHTML='<div class="msg">Choose two different months.</div>';return}
+ if(!ags.length||!cs.length){o.innerHTML='<div class="msg">Tick at least one agent and one column.</div>';return}
+ const ra=inMonth(A).filter(r=>ags.includes(r.agent)),rb=inMonth(B).filter(r=>ags.includes(r.agent));
+ o.innerHTML=`<p><b>A:</b> ${fM(A)} (${nd(ra)} recorded days) &nbsp; <b>B:</b> ${fM(B)} (${nd(rb)} recorded days). Change = (B − A) ÷ A.</p>`+cs.map(c=>{
+  const row=(lab,x,y,b)=>{const ta=tot(x,c),tb=tot(y,c),aa=avg(x,c),ab=avg(y,c);
+   return`<tr${b?' class="tot"':''}><td>${lab}</td><td>${fmt(c,ta)}</td><td>${fmt(c,tb)}</td><td>${dl(c,tb-ta)}</td><td>${pc(pct(ta,tb))}</td><td>${fmt(c,aa,1)}</td><td>${fmt(c,ab,1)}</td><td>${pc(pct(aa,ab))}</td></tr>`};
+  const rows=ags.filter(g=>ra.some(r=>r.agent===g)||rb.some(r=>r.agent===g)).sort().map(g=>row(esc(g),ra.filter(r=>r.agent===g),rb.filter(r=>r.agent===g))).join('');
+  return`<h3>${c.n}</h3><div class="scroll"><table><thead><tr><th>Agent</th><th>${fM(A)} total</th><th>${fM(B)} total</th><th>Difference</th><th>Change %</th><th>${fM(A)} avg/day</th><th>${fM(B)} avg/day</th><th>Avg change %</th></tr></thead><tbody>${rows}${row('All selected',ra,rb,1)}</tbody></table></div>`}).join('')}
+
+/* load + wire */
+function msg(t,w){$('msg').hidden=!t;$('msg').innerHTML=t||''}
+async function load(){
+ const btn=$('refresh');btn.disabled=true;if(!ROWS.length)msg('Fetching the latest records…');
+ try{
+  const r=await fetch(URL_,{cache:'no-store'});if(!r.ok)throw new Error('Server answered '+r.status);
+  const j=await r.json();if(!Array.isArray(j))throw new Error('Unexpected response');
+  const out=[];
+  j.forEach(r=>{const o={};let cd=null;
+   for(const k in r){const v=r[k];o[k.trim().toLowerCase()]=v;if(!cd){const c=dateCands(v);if(c.length)cd=c}}
+   const a=String(o['agent name']||'').trim();if(!cd||!a)return;
+   const x={date:null,cd,agent:a};COLS.forEach(c=>{if(!c.d)x[c.k]=c.t==='t'?pt(o[c.k]):pn(o[c.k])});out.push(x)});
+  resolveDates(out);
+  if(!out.length)throw new Error('No valid rows (need a dd-mm-yyyy date and Agent Name)');
+  ROWS=out;AG=[...new Set(ROWS.map(r=>r.agent))].sort();MS=[...new Set(ROWS.map(r=>r.date.slice(0,7)))].sort().reverse();
+  const mo=MS.map(k=>`<option value="${k}">${fM(k)}</option>`).join('');
+  const keep=id=>{const v=$(id).value;return v};const p=['m1','m2','ma','mb'].map(keep);
+  ['m1','m2','ma','mb'].forEach((id,i)=>{$(id).innerHTML=mo;$(id).value=MS.includes(p[i])?p[i]:(id==='mb'?MS[0]:id==='ma'?(MS[1]||MS[0]):MS[0])});
+  const pa=$('a1').value;$('a1').innerHTML='<option value="*">All agents</option>'+AG.map(g=>`<option>${esc(g)}</option>`).join('');$('a1').value=AG.includes(pa)?pa:'*';
+  const ai=AG.map(g=>({v:g,l:g})),ci=COLS.map(c=>({v:c.k,l:c.n}));
+  checks('ag2',ai,AG);checks('ag3',ai,AG);checks('c2',ci,DEF);checks('c3',ci,DEF);
+  tools('ag2tools','ag2',r2);tools('ag3tools','ag3',r3);
+  $('info').textContent=`${ROWS.length} records · ${AG.length} agents · ${MS.length} month(s) · refreshed ${new Date().toLocaleTimeString('en-IN')}`;
+  msg('');$('app').hidden=false;r1();init2();r3();
+ }catch(e){msg(`<b>Could not load data.</b> ${esc(e.message)}. ${ROWS.length?'Showing last loaded data.':''} If you opened this file from disk, host it (e.g. GitHub Pages).<br><button id="retry">Retry</button>`);$('retry').onclick=load}
+ finally{btn.disabled=false}}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t))});
+['m1','a1'].forEach(i=>$(i).onchange=r1);$('m2').onchange=init2;
+['rs','re','sd','ag2','c2'].forEach(i=>$(i).oninput=r2);
+['ma','mb','ag3','c3'].forEach(i=>$(i).oninput=r3);
+$('refresh').onclick=load;load();
+</script>
+</body>
+</html>
